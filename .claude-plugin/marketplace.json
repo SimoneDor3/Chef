@@ -1,0 +1,14 @@
+{
+  "name": "product-lifecycle",
+  "owner": { "name": "product-lifecycle maintainers" },
+  "metadata": { "description": "Local marketplace for the product-lifecycle plugin" },
+  "plugins": [
+    {
+      "name": "product-lifecycle",
+      "source": "./",
+      "description": "Gated product lifecycle: frame, discover, design, build and maintain, with a decision ledger and dashboard.",
+      "version": "0.1.0",
+      "category": "workflow"
+    }
+  ]
+}

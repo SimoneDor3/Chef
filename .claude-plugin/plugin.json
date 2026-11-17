@@ -1,0 +1,15 @@
+{
+  "name": "product-lifecycle",
+  "version": "0.1.0",
+  "description": "Carry a product from idea to maintenance in gated phases: frame the vision, settle every open question in structured discussion rounds, design, then build. Ledger files in the repo, a generated dashboard, and gates only the owner can sign.",
+  "keywords": [
+    "product",
+    "discovery",
+    "planning",
+    "decisions",
+    "lifecycle"
+  ],
+  "skills": [
+    "./skills/"
+  ]
+}
