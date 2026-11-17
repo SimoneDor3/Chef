@@ -48,6 +48,7 @@ stage (`discovering`, `designing`, `building`); the owner running the command is
 travel with the MVP and have no stage of their own.
 
 Anything labelled **later** is parked with its notes, never lost, and does not block the MVP.
+An idea the owner turns down is dropped: it leaves the stages but its file and id stay.
 
 ## Commands
 

@@ -53,6 +53,8 @@ chef.py add-question --topic sync --title "..." --context "..." [--blocking]
 chef.py add-decision --title "..." --decision "..." --why "..." --answers "Q-004" [--accepted]
 chef.py accept D-007
 chef.py add-feature --title "..." --label MVP|later --goal "..."
+chef.py topic stack covered      # open | "in progress" | covered
+chef.py drop F-007 --reason "..."  # an idea the owner turned down; the file stays
 chef.py stage mvp                 # where it is, and the checks for the next move
 chef.py stage mvp scoped          # move it, or refuse with what is missing
 chef.py next | status | check

@@ -118,6 +118,32 @@ class ChefTest(unittest.TestCase):
         self.assertNotEqual(self.cmd("stage", mvp)[0], 0)
         self.assertEqual(self.cmd("check")[0], 0)
 
+    def test_topic_status(self):
+        self.assertEqual(self.cmd("topic", "stack", "in progress")[0], 0)
+        self.assertEqual(chef.Product(self.dir).topics()[0]["status"], "in progress")
+        self.assertNotEqual(self.cmd("topic", "nope", "covered")[0], 0)
+        self.assertNotEqual(self.cmd("topic", "stack", "done")[0], 0)
+        self.assertEqual(self.cmd("check")[0], 0)
+
+    def test_drop_keeps_the_file_and_the_id(self):
+        fid = self.cmd("add-feature", "--title", "Export", "--label", "later")[1]
+        self.assertEqual(self.cmd("drop", fid, "--reason", "not worth it")[0], 0)
+        p = chef.Product(self.dir)
+        self.assertIsNone(p.stage(fid))
+        self.assertEqual(p.state(fid), "dropped")
+        self.assertIn("not worth it", p.meta["dropped"][fid])
+        self.assertEqual(self.cmd("add-feature", "--title", "Import", "--label", "later")[1], "F-002")
+        self.assertEqual(self.cmd("check")[0], 0)
+        self.assertIn("dropped", self.cmd("status")[1])
+
+    def test_drop_refused_once_scoped(self):
+        fid = self.cmd("add-feature", "--title", "Export", "--label", "later")[1]
+        self.set_stage(fid, "scoped")
+        self.assertNotEqual(self.cmd("drop", fid, "--reason", "x")[0], 0)
+
+    def test_product_folder_ignores_dashboard(self):
+        self.assertEqual((self.root / ".gitignore").read_text().strip(), "dashboard.html")
+
     def test_check_catches_decided_without_decision(self):
         self.q()
         path = next((self.root / "questions").glob("Q-001*.md"))
@@ -161,7 +187,7 @@ class ChefTest(unittest.TestCase):
         self.q("--blocking")
         code, out = self.cmd("stage", "mvp", "scoped")
         self.assertEqual(code, 1)
-        for missing in ("mvp.md filled in", "not yet: stack", "0 MVP features", "toolset.json", "Q-001"):
+        for missing in ("mvp.md filled in", "not yet: stack", "no MVP feature yet", "toolset.json", "Q-001"):
             self.assertIn(missing, out)
         self.assertEqual(self.stage(), "discovering")
 

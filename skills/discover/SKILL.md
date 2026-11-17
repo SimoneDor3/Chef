@@ -12,7 +12,9 @@ Load the `chef` skill first. Target: $ARGUMENTS (default: what `chef.py next` su
 
 - **An item** (`mvp` or `F-001`) at `idea`: run `chef.py stage <item> discovering`. If refused,
   say what is missing and stop.
-- **A topic**: set it to `in progress` in `topics.md`.
+- **A feature labelled MVP**: no stage of its own; settle its scope and acceptance criteria as
+  part of the MVP.
+- **A topic**: `chef.py topic <id> "in progress"`.
 - Read `chef.py status`, the vision, `mvp.md` and the files involved. Summarise what is known.
 - If a decision is waiting for the owner, settle it first.
 
@@ -49,6 +51,6 @@ Check every name against the installed ECC plugin. Example:
 
 ## End
 
-Keep a round to six to eight questions. Mark a topic `covered` only with the owner's yes and
-nothing open in it. Then: `check`, `dashboard`, session note, commit, next move (usually the
+Keep a round to six to eight questions. Mark a topic covered (`chef.py topic <id> covered`) only with the
+owner's yes and nothing open in it. Then: `check`, `dashboard`, session note, commit, next move (usually the
 next MVP topic, or `/chef:approve mvp` when `chef.py stage mvp` shows every check PASS).

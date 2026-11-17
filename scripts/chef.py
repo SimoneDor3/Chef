@@ -10,6 +10,8 @@ Commands
   add-decision ...              record a decision, proposed unless --accepted (prints its id)
   accept D-001                  accept a decision; questions it answers become decided
   add-feature ...               write a feature file; a later feature starts at stage idea
+  topic ID STATUS               set a topic to open, in progress or covered
+  drop F-001 --reason ...       park a later idea for good (its file and id stay)
   stage ITEM [STAGE]            show an item's stage and checks, or move it one stage on
   next                          the suggested next move
   status                        one-screen summary: stages, waiting on the owner, next move
@@ -145,6 +147,10 @@ class Product:
     def stage(self, item):
         return self.meta["stages"].get(item)
 
+    def state(self, fid):
+        """A feature's stage, or 'dropped', or 'with the MVP'."""
+        return self.stage(fid) or ("dropped" if fid in self.meta.get("dropped", {}) else "with the MVP")
+
     def open_items(self):
         """Items with a stage of their own, in order: the MVP, then later features."""
         return ["mvp"] + [f["id"] for f in self.items("F") if f["id"] in self.meta["stages"]]
@@ -167,8 +173,8 @@ def move_checks(p, item, target):
             out.append((not left, f"all {len(mvp_topics)} MVP topics covered" + (f" (not yet: {', '.join(left)})" if left else "")))
             feats = [f for f in p.items("F") if f.get("Label") == "MVP"]
             no_ac = [f["id"] for f in feats if not has_criteria(f["text"])]
-            out.append((bool(feats) and not no_ac, f"{len(feats)} MVP features, each with acceptance criteria"
-                        + (f" (missing: {', '.join(no_ac)})" if no_ac else "")))
+            out.append((bool(feats) and not no_ac, "every MVP feature has acceptance criteria"
+                        + (f" (missing: {', '.join(no_ac)})" if no_ac else "" if feats else " (no MVP feature yet)")))
             out.append(((p.root / "toolset.json").exists(), "toolset.json written from the stack decision"))
     else:
         f = p.feature(item)
@@ -186,8 +192,8 @@ def move_checks(p, item, target):
         out.append((fields(p.read("design/system.md")).get("Status") == "approved", "design system approved"))
         mine = [s for s in p.screens() if s.get("Item") == item]
         pending = [s["path"].stem for s in mine if s.get("Status") != "approved"]
-        out.append((bool(mine) and not pending, f"{len(mine)} screens for {item}, all approved"
-                    + (f" (pending: {', '.join(pending)})" if pending else "")))
+        out.append((bool(mine) and not pending, f"every screen for {item} approved"
+                    + (f" (pending: {', '.join(pending)})" if pending else "" if mine else " (no screen yet)")))
     elif target == "building" and item != "mvp":
         out.append((p.stage("mvp") == "shipped", "the MVP is shipped"))
     elif target == "shipped":
@@ -384,6 +390,29 @@ def cmd_add_feature(args):
     print(fid)
 
 
+def cmd_topic(args):
+    p = Product(args.dir)
+    text = p.read("topics.md")
+    pattern = re.compile(r"^(\|\s*" + re.escape(args.id) + r"\s*\|[^|]*\|[^|]*\|\s*)([^|]*?)(\s*\|)", re.M)
+    if not pattern.search(text):
+        raise SystemExit(f"unknown topic {args.id!r}")
+    (p.root / "topics.md").write_text(pattern.sub(lambda m: m.group(1) + args.status + m.group(3), text, count=1),
+                                      encoding="utf-8")
+    print(f"{args.id}: {args.status}")
+
+
+def cmd_drop(args):
+    """Park a later feature for good. The file stays, so its id is never reused."""
+    p = Product(args.dir)
+    check_item(p, args.id)
+    if p.stage(args.id) not in ("idea", "discovering"):
+        raise SystemExit(f"{args.id} is {p.stage(args.id)}; only an idea or a feature in discovery can be dropped")
+    del p.meta["stages"][args.id]
+    p.meta.setdefault("dropped", {})[args.id] = f"{today()}: {args.reason}"
+    p.save()
+    print(f"dropped {args.id}")
+
+
 # ------------------------------------------------------------------ checks
 def separation_problems(p):
     """Chef must never mention a product, so it stays reusable."""
@@ -438,7 +467,7 @@ def problems(p):
             errs.append(f"{f['path'].name}: label {f.get('Label')!r} not in {LABELS}")
         elif f.get("Label") == "MVP" and f["id"] in p.meta["stages"]:
             errs.append(f"product.json: {f['id']} is labelled MVP, so it has no stage of its own")
-        elif f.get("Label") == "later" and f["id"] not in p.meta["stages"]:
+        elif f.get("Label") == "later" and f["id"] not in p.meta["stages"] and f["id"] not in p.meta.get("dropped", {}):
             errs.append(f"product.json: {f['id']} is labelled later but has no stage")
     for item in qs + ds + fs:
         for ref in ids(item["text"]):
@@ -474,7 +503,7 @@ def cmd_status(args):
     live = [q for q in qs if q.get("Status") in ("open", "discussing")]
     print(f"{p.meta['name']}: MVP {p.stage('mvp')}")
     for f in p.items("F"):
-        print(f"  {f['id']} {f['title']:<40} {p.stage(f['id']) or 'with the MVP'}")
+        print(f"  {f['id']} {f['title']:<40} {p.state(f['id'])}")
     print(f"questions: {len(live)} open of {len(qs)} ({sum(q.get('Blocking') == 'yes' for q in live)} blocking)")
     print(f"decisions: {sum(d.get('Status') == 'accepted' for d in ds)} accepted, "
           f"{sum(d.get('Status') == 'proposed' for d in ds)} waiting for the owner")
@@ -636,7 +665,7 @@ def render_dashboard(p):
     item_name = "MVP" if item == "mvp" else f"{item} {esc(p.feature(item)['title'])}"
 
     def feature_card(f):
-        st = p.stage(f["id"]) or "with the MVP"
+        st = p.state(f["id"])
         return (f'<div class="card"><div class="th"><b><code>{f["id"]}</code>{esc(f["title"])}</b>'
                 f'<span class="pill {esc(st.replace(" ", "-"))}">{esc(st)}</span></div>'
                 f'<p>{esc(first_para(section(f["text"], "Goal"), 160))}</p></div>')
@@ -735,6 +764,12 @@ def main(argv=None):
     s.add_argument("--title", required=True)
     s.add_argument("--label", choices=LABELS, required=True)
     s.add_argument("--goal")
+    s = sub.add_parser("topic")
+    s.add_argument("id")
+    s.add_argument("status", choices=TOPIC_STATUSES)
+    s = sub.add_parser("drop")
+    s.add_argument("id")
+    s.add_argument("--reason", required=True)
     s = sub.add_parser("stage")
     s.add_argument("item")
     s.add_argument("to", nargs="?", choices=STAGES)
@@ -748,7 +783,7 @@ def main(argv=None):
         s.add_argument("--project", default=".", help="the product's repository (default: .)")
     args = ap.parse_args(argv)
     {"init": cmd_init, "add-topic": cmd_add_topic, "add-question": cmd_add_question, "add-decision": cmd_add_decision,
-     "accept": cmd_accept, "add-feature": cmd_add_feature, "stage": cmd_stage, "next": cmd_next, "status": cmd_status,
+     "accept": cmd_accept, "add-feature": cmd_add_feature, "topic": cmd_topic, "drop": cmd_drop, "stage": cmd_stage, "next": cmd_next, "status": cmd_status,
      "check": cmd_check, "dashboard": cmd_dashboard, "deps": cmd_deps, "settings": cmd_settings}[args.cmd](args)
 
 
