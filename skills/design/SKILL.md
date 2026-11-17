@@ -18,8 +18,9 @@ on their yes.
 
 ## `mvp` or a feature
 
-1. Run `chef.py stage <item> designing`. If refused, say what is missing and stop. If
-   `design/system.md` is not approved, do `system` first.
+1. If `design/system.md` is not approved, do `system` first. If the item is `scoped`, run
+   `chef.py stage <item> designing` (if refused, say what is missing and stop). If it is already
+   `designing`, resume: read its screens and their review notes.
 2. List the journeys the item needs (write any missing ones in `journeys/`), then the screens.
 3. For each screen: a file from `templates/screen.md` with `Item` set to the item, and a mockup
    next to it. States: default, empty, loading, error. Use `design:ux-copy` for words and

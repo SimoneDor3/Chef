@@ -94,6 +94,8 @@ def ids(value):
 
 def unfilled(text):
     """Section names of a TODO-template file that are still empty or say TODO."""
+    if not text.strip():
+        return ["(file missing or empty)"]
     return [n for n in re.findall(r"^## (.+)$", text, re.M) if not section(text, n) or "TODO" in section(text, n)]
 
 
@@ -107,8 +109,13 @@ class Product:
         meta = self.root / "product.json"
         if not meta.exists():
             raise SystemExit(f"{meta} not found: run `chef.py --dir {root} init --name ...` first")
-        self.meta = json.loads(meta.read_text(encoding="utf-8"))
-        self.meta.setdefault("stages", {})
+        try:
+            self.meta = json.loads(meta.read_text(encoding="utf-8-sig"))
+        except ValueError as exc:
+            raise SystemExit(f"{meta} is not valid JSON ({exc}); fix it first")
+        if not isinstance(self.meta, dict) or not isinstance(self.meta.setdefault("stages", {}), dict):
+            raise SystemExit(f"{meta} must be an object with a 'stages' object")
+        self.meta.setdefault("name", self.root.name)
 
     def save(self):
         (self.root / "product.json").write_text(json.dumps(self.meta, indent=2) + "\n", encoding="utf-8")
@@ -202,10 +209,20 @@ def move_checks(p, item, target):
 
 
 def next_stage(stage):
-    return STAGES[STAGES.index(stage) + 1] if stage != "shipped" else None
+    return STAGES[STAGES.index(stage) + 1] if stage in STAGES[:-1] else None
+
+
+def require_valid_stages(p):
+    """Commands that reason about stages stop here, with a clear message, on a bad product.json."""
+    bad = {i: s for i, s in p.meta["stages"].items() if s not in STAGES}
+    if "mvp" not in p.meta["stages"]:
+        raise SystemExit("product.json has no stage for mvp; run `chef.py check`")
+    if bad:
+        raise SystemExit(f"product.json has unknown stages {bad}; expected one of {STAGES}")
 
 
 def check_item(p, item):
+    require_valid_stages(p)
     if item != "mvp":
         f = p.feature(item)
         if not f:
@@ -251,6 +268,7 @@ def focus(p):
 
 def next_move(p):
     """(command, why): the one move Chef suggests now."""
+    require_valid_stages(p)
     left = unfilled(p.read("vision.md"))
     if left:
         return "/chef:vision", "finish the vision: " + ", ".join(left)
@@ -299,6 +317,8 @@ def cmd_init(args):
     root = Path(args.dir)
     if (root / "product.json").exists():
         raise SystemExit(f"{root} already holds a product")
+    if root.exists() and any(root.iterdir()):
+        raise SystemExit(f"{root} is not empty; pick an empty or new folder")
     shutil.copytree(KIT / "templates" / "product", root, dirs_exist_ok=True)
     meta = {"name": args.name, "created": today(), "chef_version": kit_version(),
             "stages": {"mvp": "idea"}, "separation_terms": []}
@@ -321,6 +341,8 @@ def cmd_add_topic(args):
         raise SystemExit("topic id: lowercase letters, digits and dashes only")
     if args.id in {t["id"] for t in p.topics()}:
         raise SystemExit(f"topic {args.id!r} already exists")
+    if any(c in (args.name + (args.scope or "")) for c in "|\n\r"):
+        raise SystemExit("topic name and scope cannot contain '|' or line breaks")
     row = f"| {args.id} | {args.name} | {args.label} | open | {args.scope or '-'} |"
     (p.root / "topics.md").write_text(p.read("topics.md").rstrip("\n") + "\n" + row + "\n", encoding="utf-8")
     print(args.id)
@@ -345,6 +367,8 @@ def cmd_add_decision(args):
     if missing:
         raise SystemExit(f"unknown questions: {', '.join(missing)}")
     did = p.next_id("D")
+    if args.accepted:
+        answered_texts(p, did, answers)                     # fails before the decision is written
     body = fill("decision.md", ID=did, TITLE=args.title, STATUS="accepted" if args.accepted else "proposed",
                 DATE=today(), ANSWERS=", ".join(answers) or "-", SOURCE=args.source or "-",
                 DECISION=args.decision, WHY=args.why or "", CONSEQUENCES=args.consequences or "")
@@ -358,11 +382,15 @@ def cmd_add_decision(args):
     print(did)
 
 
+def answered_texts(p, did, answers):
+    """New text for each question a decision answers; raises before anything is written."""
+    return [(q["path"], set_field(set_field(q["text"], "Status", "decided"), "Answered by", did))
+            for q in p.items("Q") if q["id"] in answers]
+
+
 def mark_answered(p, did, answers):
-    for q in p.items("Q"):
-        if q["id"] in answers:
-            text = set_field(q["text"], "Status", "decided")
-            q["path"].write_text(set_field(text, "Answered by", did), encoding="utf-8")
+    for path, text in answered_texts(p, did, answers):
+        path.write_text(text, encoding="utf-8")
 
 
 def cmd_accept(args):
@@ -372,8 +400,10 @@ def cmd_accept(args):
             if d.get("Status") == "accepted":
                 print(f"{args.id} is already accepted")
                 return
+            questions = answered_texts(p, args.id, ids(d.get("Answers")))     # fails before any write
             d["path"].write_text(set_field(set_field(d["text"], "Status", "accepted"), "Date", today()), encoding="utf-8")
-            mark_answered(p, args.id, ids(d.get("Answers")))
+            for path, text in questions:
+                path.write_text(text, encoding="utf-8")
             print(f"accepted {args.id}")
             return
     raise SystemExit(f"{args.id} not found")
@@ -480,6 +510,9 @@ def problems(p):
             errs.append(f"product.json: stage for unknown item {item}")
     if "mvp" not in p.meta["stages"]:
         errs.append("product.json: no stage for mvp")
+    for name in ("vision.md", "mvp.md", "topics.md"):
+        if not (p.root / name).exists():
+            errs.append(f"{name} is missing")
     toolset = p.root / "toolset.json"
     if toolset.exists():
         try:
@@ -499,6 +532,7 @@ def cmd_check(args):
 
 def cmd_status(args):
     p = Product(args.dir)
+    require_valid_stages(p)
     qs, ds = p.items("Q"), p.items("D")
     live = [q for q in qs if q.get("Status") in ("open", "discussing")]
     print(f"{p.meta['name']}: MVP {p.stage('mvp')}")
@@ -519,8 +553,8 @@ def enabled_plugins(project):
     for path in (Path.home() / ".claude" / "settings.json", project / ".claude" / "settings.json",
                  project / ".claude" / "settings.local.json"):
         try:
-            out.update(json.loads(path.read_text(encoding="utf-8")).get("enabledPlugins", {}))
-        except (OSError, ValueError, AttributeError):
+            out.update(json.loads(path.read_text(encoding="utf-8-sig")).get("enabledPlugins", {}))
+        except (OSError, ValueError, AttributeError, TypeError):
             pass
     return out
 
@@ -552,16 +586,24 @@ def cmd_deps(args):
 def merge_settings(project, product_dir):
     """Add Chef's project settings without overwriting anything the owner set. Returns what changed."""
     path = project / ".claude" / "settings.json"
-    data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {}
+    except ValueError as exc:
+        raise SystemExit(f"{path} is not valid JSON ({exc}); fix it first")
+    if not isinstance(data, dict) or any(not isinstance(data.get(k, {}), dict)
+                                         for k in ("env", "extraKnownMarketplaces", "enabledPlugins")):
+        raise SystemExit(f"{path}: env, extraKnownMarketplaces and enabledPlugins must be objects; fix it first")
+    try:
+        rel = Path(os.path.relpath(Path(product_dir).resolve(), project.resolve())).as_posix()
+    except ValueError:                                      # another drive on Windows
+        rel = ".."
+    if rel == "." or rel.startswith(".."):                  # never exempt the whole repo, or outside it
+        raise SystemExit(f"the product folder must be inside the project, below its root (got {rel})")
     changed = []
     env = data.setdefault("env", {})
     if "PONYTAIL_DEFAULT_MODE" not in env:
         env["PONYTAIL_DEFAULT_MODE"] = "off"
         changed.append("Ponytail off by default")
-    try:
-        rel = Path(os.path.relpath(Path(product_dir).resolve(), project.resolve())).as_posix()
-    except ValueError:                                      # another drive on Windows
-        rel = Path(product_dir).resolve().as_posix()
     glob = f"{rel}/**"
     globs = [g.strip() for g in env.get("GATEGUARD_EXEMPT_GLOBS", "").split(",") if g.strip()]
     if glob not in globs:
@@ -570,7 +612,7 @@ def merge_settings(project, product_dir):
     markets = data.setdefault("extraKnownMarketplaces", {})
     if "ponytail" not in markets:
         markets["ponytail"] = {"source": {"source": "github", "repo": "DietrichGebert/ponytail"}}
-        changed.append("Ponytail marketplace declared")
+        changed.append("Ponytail marketplace declared (github.com/DietrichGebert/ponytail)")
     plugins = data.setdefault("enabledPlugins", {})
     if "ponytail@ponytail" not in plugins:
         plugins["ponytail@ponytail"] = True

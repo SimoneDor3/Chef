@@ -141,6 +141,50 @@ class ChefTest(unittest.TestCase):
         self.set_stage(fid, "scoped")
         self.assertNotEqual(self.cmd("drop", fid, "--reason", "x")[0], 0)
 
+    def test_missing_vision_or_mvp_never_passes(self):
+        (self.root / "vision.md").unlink()
+        code, out = self.cmd("stage", "mvp", "discovering")
+        self.assertEqual(code, 1)
+        self.assertIn("file missing", out)
+        self.assertEqual(self.next()[0], "/chef:vision")
+        self.assertIn("vision.md is missing", self.cmd("check")[1])
+
+    def test_bad_product_json_gives_a_clear_message(self):
+        meta = self.root / "product.json"
+        meta.write_text("{bad")
+        code, out = self.cmd("status")
+        self.assertEqual(code, 1)
+        self.assertIn("not valid JSON", out)
+        meta.write_text('\ufeff{"name": "Sample App", "stages": {"mvp": "cooking"}}', encoding="utf-8")
+        for argv in (("status",), ("next",), ("dashboard",), ("stage", "mvp")):
+            code, out = self.cmd(*argv)
+            self.assertEqual(code, 1, argv)
+            self.assertIn("unknown stages", out, argv)
+        self.assertIn("cooking", self.cmd("check")[1])
+
+    def test_accept_writes_nothing_if_a_question_is_broken(self):
+        qid = self.q()
+        path = next((self.root / "questions").glob("Q-001*.md"))
+        path.write_text(path.read_text().replace("| Answered by | - |\n", ""))
+        did = self.cmd("add-decision", "--title", "Use Python", "--decision", "Python.", "--answers", qid)[1]
+        self.assertNotEqual(self.cmd("accept", did)[0], 0)
+        self.assertEqual(chef.Product(self.dir).items("D")[0]["Status"], "proposed")
+
+    def test_add_topic_refuses_table_breaking_text(self):
+        self.assertNotEqual(self.cmd("add-topic", "--id", "t2", "--name", "a|b", "--label", "MVP")[0], 0)
+
+    def test_topic_status_only_changes_its_own_row(self):
+        self.cmd("add-topic", "--id", "stack-x", "--name", "More stack", "--label", "later")
+        self.cmd("topic", "stack-x", "covered")
+        self.assertEqual([t["status"] for t in chef.Product(self.dir).topics()], ["open", "covered"])
+
+    def test_init_refuses_a_folder_with_files(self):
+        other = self.tmp / "notes"
+        other.mkdir()
+        (other / "README.md").write_text("mine")
+        self.assertNotEqual(run("--dir", str(other), "init", "--name", "X")[0], 0)
+        self.assertEqual((other / "README.md").read_text(), "mine")
+
     def test_product_folder_ignores_dashboard(self):
         self.assertEqual((self.root / ".gitignore").read_text().strip(), "dashboard.html")
 
@@ -297,6 +341,17 @@ class ChefTest(unittest.TestCase):
         self.assertTrue(data["enabledPlugins"]["ponytail@ponytail"])
         self.assertIn("already in place", self.cmd("settings", "--project", str(self.tmp))[1])
 
+    def test_settings_refuses_bad_json_and_whole_repo_exemption(self):
+        (self.tmp / ".claude").mkdir()
+        (self.tmp / ".claude" / "settings.json").write_text("{ // comment")
+        code, out = self.cmd("settings", "--project", str(self.tmp))
+        self.assertEqual(code, 1)
+        self.assertIn("not valid JSON", out)
+        (self.tmp / ".claude" / "settings.json").write_text("{}")
+        code, out = run("--dir", str(self.tmp), "settings", "--project", str(self.tmp))
+        self.assertEqual(code, 1)
+        self.assertEqual(json.loads((self.tmp / ".claude" / "settings.json").read_text()), {})
+
     def test_settings_on_a_new_project(self):
         self.cmd("settings", "--project", str(self.tmp))
         data = json.loads((self.tmp / ".claude" / "settings.json").read_text())
@@ -316,7 +371,7 @@ class ChefTest(unittest.TestCase):
 
 
 class SkillsTest(unittest.TestCase):
-    def test_the_eight_commands_and_the_shared_rules(self):
+    def test_eight_commands_plus_the_shared_rules_skill(self):
         skills = sorted(d.name for d in (chef.KIT / "skills").iterdir() if (d / "SKILL.md").exists())
         self.assertEqual(skills, ["approve", "bug", "build", "chef", "design", "discover", "idea", "status", "vision"])
         for name in skills:
