@@ -41,6 +41,12 @@ Each item (the MVP or a feature) moves through these stages, one step per approv
 
 `idea → discovering → scoped → designing → designed → building → shipped`
 
+Starting `/chef:discover`, `/chef:design` or `/chef:build` on an item moves it into the working
+stage (`discovering`, `designing`, `building`); the owner running the command is the approval.
+`/chef:approve` makes the other moves (`scoped`, `designed`, `shipped`). Every move is checked by
+`chef.py` and refused, with the reason, if something required is missing. Features labelled MVP
+travel with the MVP and have no stage of their own.
+
 Anything labelled **later** is parked with its notes, never lost, and does not block the MVP.
 
 ## Commands
@@ -89,8 +95,13 @@ must-have features, what is out, and how success is measured. Every topic it sur
 MVP or later; MVP topics are then discussed one by one. **The tech stack is a required MVP
 topic**: its decision produces `toolset.json`, which the Build loop uses.
 
-`/chef:approve mvp` passes when every MVP topic is settled, every MVP feature has acceptance
-criteria, and no proposal is waiting for the owner.
+`/chef:approve mvp` passes when the vision and `mvp.md` are filled in, every MVP topic is
+settled, no blocking question is open, every MVP feature has acceptance criteria, `toolset.json`
+exists, and no proposal is waiting for the owner.
+
+The other checks: `designed` needs an approved design system and every screen of the item
+approved; `building` needs the item designed, and for a feature the MVP shipped; `shipped` needs
+the build summary in `build/<item>/summary.md`.
 
 ## Design
 
@@ -119,7 +130,8 @@ DONE    summary, cost, shortcuts taken  ▶ owner approves  ▶ commit
 | Language reviewer | the ECC reviewer for the stack | chosen by the planner |
 | Extra reviewers | ECC `pr-test-analyzer`, `silent-failure-hunter`, `database-reviewer`, `a11y-architect` when the planner flags a need | chosen by the planner |
 
-- **Ponytail** is loaded by every Build agent and is off in every other phase.
+- **Ponytail** is loaded by every Build agent and is off in every other phase: products set
+  `PONYTAIL_DEFAULT_MODE=off`, `/chef:build` switches it on (`/ponytail full`) and off again at DONE.
 - **Graphify** maps the codebase when Build starts and refreshes on each commit; Build agents query
   it instead of reading files. Code only: no document mapping, no strict mode.
 - Reviewers flag defects, not missing abstractions; the planner settles disagreements.
@@ -128,8 +140,9 @@ DONE    summary, cost, shortcuts taken  ▶ owner approves  ▶ commit
 
 - **Required plugins:** ECC, Ponytail. **Required tools:** Graphify (Python 3.11+, `uv`), Python 3.9+
   for Chef's own script. `/chef:vision` checks them and says what is missing.
-- **Project settings** written by `/chef:vision`: Ponytail off by default; ECC GateGuard skips the
-  product folder (it stays on for code).
+- **Project settings** written by `/chef:vision` into the product's `.claude/settings.json`
+  (merged, never overwritten): Ponytail off by default (`PONYTAIL_DEFAULT_MODE=off`); ECC GateGuard
+  skips the product folder (`GATEGUARD_EXEMPT_GLOBS=product/**`; it stays on for code).
 
 ## Repository and roadmap
 
@@ -139,7 +152,7 @@ touch a product. Products install Chef as a plugin. The first product built with
 1. Owner approves this design. *(done)*
 2. Owner creates an empty `chef` repository on GitHub. *(done)*
 3. Move the kit there with its git history, rename it, and keep its tests passing. *(done)*
-4. Build the commands, the stages and the new dashboard in the Chef repository.
+4. Build the commands, the stages and the new dashboard in the Chef repository. *(in progress)*
 5. Install Chef into the first product and convert its existing notes to the new format.
 6. Run `/chef:discover mvp` on it.
 
