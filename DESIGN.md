@@ -152,7 +152,7 @@ touch a product. Products install Chef as a plugin. The first product built with
 1. Owner approves this design. *(done)*
 2. Owner creates an empty `chef` repository on GitHub. *(done)*
 3. Move the kit there with its git history, rename it, and keep its tests passing. *(done)*
-4. Build the commands, the stages and the new dashboard in the Chef repository. *(in progress)*
+4. Build the commands, the stages and the new dashboard in the Chef repository. *(done)*
 5. Install Chef into the first product and convert its existing notes to the new format.
 6. Run `/chef:discover mvp` on it.
 

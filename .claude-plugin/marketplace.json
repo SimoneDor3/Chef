@@ -10,7 +10,7 @@
     {
       "name": "chef",
       "source": "./",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "category": "workflow",
       "description": "Guided product building: vision, MVP, design and build, with an offline dashboard."
     }

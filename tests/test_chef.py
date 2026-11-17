@@ -281,5 +281,15 @@ class ChefTest(unittest.TestCase):
             probe.unlink()
 
 
+class SkillsTest(unittest.TestCase):
+    def test_the_eight_commands_and_the_shared_rules(self):
+        skills = sorted(d.name for d in (chef.KIT / "skills").iterdir() if (d / "SKILL.md").exists())
+        self.assertEqual(skills, ["approve", "bug", "build", "chef", "design", "discover", "idea", "status", "vision"])
+        for name in skills:
+            head = (chef.KIT / "skills" / name / "SKILL.md").read_text().split("---")[1]
+            self.assertIn(f"name: {name}\n", head)
+            self.assertIn("description: ", head)
+
+
 if __name__ == "__main__":
     unittest.main()
