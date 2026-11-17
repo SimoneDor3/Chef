@@ -8,18 +8,16 @@ Read [`DESIGN.md`](DESIGN.md) first: it is the reference for how Chef works.
 
 ## Status
 
-The design is approved. What exists today is the foundation carried over from the first
-prototype:
+Step 4 of the roadmap is built: the commands, the item stages and the offline dashboard.
 
 | Path | What it is |
 |---|---|
-| `scripts/chef.py` | the product folder tool: records questions and decisions, checks consistency, checks phase exits, builds the offline dashboard (Python 3.9+, no dependencies) |
+| `skills/` | the eight commands (`/chef:vision`, `/chef:discover`, `/chef:approve`, `/chef:design`, `/chef:build`, `/chef:idea`, `/chef:bug`, `/chef:status`) and `chef`, the shared rules they load |
+| `scripts/chef.py` | the product folder tool: records questions, decisions and features, moves items between stages with checks, suggests the next move, checks dependencies, writes project settings, builds the dashboard (Python 3.9+, no dependencies) |
 | `templates/` | the product folder skeleton and one template per file type |
-| `skills/` | the prototype's skills (`lifecycle`, `frame`, `discover`, `gate`, `dashboard`), to be replaced by the commands in `DESIGN.md` |
 | `tests/` | `python -m unittest discover -s tests` |
 
-Next: build the commands (`/chef:vision`, `/chef:discover`, `/chef:approve`, `/chef:design`,
-`/chef:build`, `/chef:idea`, `/chef:bug`, `/chef:status`), the item stages and the new dashboard.
+Next: install Chef into the first product and convert its notes (roadmap step 5).
 
 ## Installing in a product
 

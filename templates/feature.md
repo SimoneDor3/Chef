@@ -1,16 +1,14 @@
-# F-000: Feature name
+# {{ID}}: {{TITLE}}
 
 | Field | Value |
 |---|---|
-| Status | draft |
-| Release | v1 |
-| Topic | features |
+| Label | {{LABEL}} |
 | Journeys | - |
 | Decisions | - |
 
 ## Goal
 
-One or two sentences: who gets what, and why it matters to them.
+{{GOAL}}
 
 ## Scope
 
@@ -23,4 +21,4 @@ One or two sentences: who gets what, and why it matters to them.
 
 ## Open points
 
-Link questions (Q-000) that still affect this feature.
+List the ids of open questions that still affect this feature.

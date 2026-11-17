@@ -1,22 +1,23 @@
 # {{PRODUCT}}: product folder
 
-Everything decided about {{PRODUCT}} before and during development lives in this folder. It is
-managed with the product kit (`kit/`); the kit's `lifecycle` skill explains the process.
+Everything decided about {{PRODUCT}} lives here, managed by the Chef plugin. Run `/chef:status`
+to see where things stand and the next move.
 
 | Path | Holds |
 |---|---|
-| `product.json` | name and current phase |
-| `vision.md` | the framing: problem, people, promise, non-goals |
-| `topics.md` | the areas Discover must cover, with their status |
-| `questions/` | every open point, one file each (`Q-001-...md`) |
-| `decisions/` | every answer, one file each (`D-001-...md`) |
-| `features/` | features with acceptance criteria (`F-001-...md`) |
-| `journeys/` | user journeys, step by step |
-| `data-sources/` | one dossier per integration or data source |
-| `design/` | one file per screen, linked to its mockup |
-| `sessions/` | notes from each discussion round |
-| `gates.md` | the owner's sign-off for each phase |
-| `dashboard.html` | generated overview; never edit by hand |
+| `product.json` | name, and the stage of the MVP and of each later feature |
+| `vision.md` | problem, people, promise, experience, non-goals, constraints, success |
+| `mvp.md` | the MVP: goal, what is in, what is out, how we know it works |
+| `topics.md` | areas to discuss, labelled MVP or later, with status |
+| `questions/` | one open point each (`Q-001-...md`) |
+| `decisions/` | one answer each (`D-001-...md`) |
+| `features/` | goal, scope, acceptance criteria, label (`F-001-...md`) |
+| `toolset.json` | the stack and the ECC agents and skills that fit it |
+| `journeys/`, `data-sources/` | user journeys and integration dossiers |
+| `design/` | `system.md` and one file per screen |
+| `build/` | plan and reports per item (`build/mvp/`, `build/F-004/`) |
+| `sessions/` | a few lines per working session |
+| `dashboard.html` | generated; never edit; not committed |
 
-Rules: only the owner accepts decisions and signs gates. A question is decided only when an
-accepted decision answers it. Changing a past decision means a new decision that supersedes it.
+Only the owner accepts decisions and approves stages. Accepted decisions are never edited, only
+superseded.

@@ -1,6 +1,6 @@
 {
   "name": "chef",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Chef guides one person from a product idea to a shipped and maintained product: vision, MVP discovery, design, then a build loop with separate planner, tester, builder and reviewers. Everything lives in small files in the product's repository, with an offline dashboard.",
   "keywords": [
     "product",

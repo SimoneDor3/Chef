@@ -1,50 +1,56 @@
 ---
 name: discover
-description: Run one structured discussion round of the Discover phase - pick a topic, work through its open questions with the owner one at a time, and record decisions, new questions and features in the product folder. Use when the owner wants to settle open points, asks "what's still open", or brings a new idea or change request.
+description: Run a Chef discovery conversation on the MVP, a feature, or one topic - one question at a time with options and a recommendation, recording decisions, questions, features and MVP-or-later labels. Use when the owner wants to settle what the MVP or a feature is, or to work through open questions.
+argument-hint: "<mvp | feature | topic>"
 ---
 
-# Discover: one discussion round
+# /chef:discover
 
-Load the `lifecycle` skill first for the rules and commands.
+Load the `chef` skill first. Target: $ARGUMENTS (default: what `chef.py next` suggests).
 
-## Before the round
+## Start
 
-1. Run `chef.py status`. Propose a topic: the owner's choice if they gave one, otherwise the one
-   with the most blocking questions, or the one later topics depend on.
-2. Read the topic's questions, the decisions they mention, `vision.md`, and any data-source or
-   feature files involved. Note which questions depend on others and take those first.
-3. Set the topic's status to `in progress` in `topics.md`.
+- **An item** (`mvp` or `F-001`) at `idea`: run `chef.py stage <item> discovering`. If refused,
+  say what is missing and stop.
+- **A feature labelled MVP**: no stage of its own; settle its scope and acceptance criteria as
+  part of the MVP.
+- **A topic**: `chef.py topic <id> "in progress"`.
+- Read `chef.py status`, the vision, `mvp.md` and the files involved. Summarise what is known.
+- If a decision is waiting for the owner, settle it first.
 
-## During the round
+## `mvp`
 
-Take questions one at a time, blocking ones first. For each:
+Settle, one at a time: the MVP's goal, its must-have features, what is out, how success is
+measured. Write `mvp.md` as you go. Every area that comes up becomes a topic with
+`add-topic --label MVP|later`; every feature becomes `add-feature --label MVP|later`.
+**The tech stack is a required MVP topic.**
 
-1. Restate it in one plain sentence and say why it matters.
-2. Give what is already known, with sources. If a fact is missing and findable (docs, an API,
-   a licence), look it up before asking the owner. If it needs a test, propose a spike.
-3. Offer two to four concrete options with their trade-offs, and say which you recommend and why.
-   Use a multiple-choice prompt when the options are discrete.
-4. Record the outcome straight away:
-   - Owner chose: `add-decision ... --answers Q-NNN --accepted --source "owner, round YYYY-MM-DD"`.
-   - Owner leaning but not sure: `add-decision` without `--accepted` (it waits in the dashboard).
-   - New uncertainty surfaced: `add-question`.
-   - Not answerable yet (needs research, a spike, someone else): leave it open and add a note
-     under Notes saying what would answer it.
-   - No longer relevant: set its Status to `dropped` with a one-line reason under Notes.
+## A topic or a feature
 
-Keep a round to about six to eight questions. Stop earlier if the owner is tired or the answers
-get vague; a vague decision is worse than an open question.
+Take its questions one at a time, blocking ones first. For each: say it plainly and why it
+matters; give what is known, with sources (look facts up before asking); offer two to four
+options and recommend one. Record straight away:
 
-## Features
+- owner chose: `add-decision ... --answers Q-NNN --accepted --source "owner, YYYY-MM-DD"`;
+- owner leaning: `add-decision` without `--accepted`;
+- new uncertainty: `add-question`; no longer relevant: Status `dropped` with a reason.
 
-When decisions add up to a feature, write it from `templates/feature.md` as `features/F-NNN-*.md`
-with acceptance criteria in the form `- **AC-001** Given ..., when ..., then ...`. ECC's
-`intent-driven-development` skill writes good criteria. Link the decisions it rests on.
+Features get acceptance criteria as `- **AC-001** Given ..., when ..., then ...`.
 
-## After the round
+## The stack decision
 
-1. Write `sessions/YYYY-MM-DD-<topic>.md` from `templates/session.md`.
-2. Ask the owner whether the topic is covered. Set `covered` only if they agree and no question in
-   it is still open.
-3. Run `check`, then `dashboard`, and commit with a message naming the topic and decisions.
-4. End with: what was decided, what is still open, and the suggested next topic.
+When the stack is decided, write `toolset.json`: the stack, its test tools, and the ECC agents and
+skills that fit it (pattern skills, test skills, the language reviewer, the build-fix agent).
+Check every name against the installed ECC plugin. Example:
+
+```json
+{"stack": ["python", "fastapi"], "tests": ["pytest"],
+ "ecc": {"reviewer": "python-reviewer", "build_fix": "build-error-resolver",
+         "skills": ["python-patterns", "python-testing", "fastapi-patterns"]}}
+```
+
+## End
+
+Keep a round to six to eight questions. Mark a topic covered (`chef.py topic <id> covered`) only with the
+owner's yes and nothing open in it. Then: `check`, `dashboard`, session note, commit, next move (usually the
+next MVP topic, or `/chef:approve mvp` when `chef.py stage mvp` shows every check PASS).
