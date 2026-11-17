@@ -3,6 +3,7 @@
 | Field | Value |
 |---|---|
 | Status | draft |
+| Item | mvp |
 | Journeys | - |
 | Mockup | - |
 
