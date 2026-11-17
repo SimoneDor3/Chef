@@ -1,65 +1,41 @@
-# Product lifecycle kit
+# Chef
 
-A reusable process for taking a product from first idea to maintenance, for one owner working
-with Claude Code. It gives the thinking phase the same structure a build pipeline gives code.
+Chef guides one person, working with Claude Code, from a product idea to a shipped and maintained
+product. You prepare the base first (the MVP), then add features one at a time, at your own pace.
+Chef proposes every next step; only you approve.
 
-## The idea
+Read [`DESIGN.md`](DESIGN.md) first: it is the reference for how Chef works.
 
-Four phases, each closed by a gate only the owner can sign:
+## Status
 
-1. **Frame**: what the product is (problem, people, promise, non-goals).
-2. **Discover**: every open point becomes a numbered question and is settled in discussion
-   rounds, one topic at a time, until nothing blocking is left.
-3. **Design**: mockups for every journey, approved screen by screen.
-4. **Build & maintain**: development from the approved design. After launch, new ideas and
-   changes re-enter at Discover.
-
-Everything lives as plain markdown in the product's own repository, so it is reviewable,
-versioned and readable by any agent. A generated dashboard shows where the product stands.
-
-## Contents
+The design is approved. What exists today is the foundation carried over from the first
+prototype:
 
 | Path | What it is |
 |---|---|
-| `.claude-plugin/` | Claude Code plugin manifest and a local marketplace entry |
-| `skills/lifecycle` | the reference: phases, rules, file formats, commands |
-| `skills/frame`, `discover`, `gate`, `dashboard` | one skill per activity |
-| `scripts/ledger.py` | the ledger tool: create records, check consistency, check gates, build the dashboard (Python 3.9+, no dependencies) |
-| `templates/` | the product folder skeleton and one template per record type |
-| `tests/` | `python -m unittest discover -s kit/tests` |
+| `scripts/chef.py` | the product folder tool: records questions and decisions, checks consistency, checks phase exits, builds the offline dashboard (Python 3.9+, no dependencies) |
+| `templates/` | the product folder skeleton and one template per file type |
+| `skills/` | the prototype's skills (`lifecycle`, `frame`, `discover`, `gate`, `dashboard`), to be replaced by the commands in `DESIGN.md` |
+| `tests/` | `python -m unittest discover -s tests` |
 
-## Using it
+Next: build the commands (`/chef:vision`, `/chef:discover`, `/chef:approve`, `/chef:design`,
+`/chef:build`, `/chef:idea`, `/chef:bug`, `/chef:status`), the item stages and the new dashboard.
 
-Start a product:
+## Installing in a product
 
-```bash
-python kit/scripts/ledger.py init --name "My Product"
-```
-
-Then ask Claude Code to run the `frame` skill, then `discover` rounds, checking progress with
-`gate` and `dashboard`.
-
-To load the skills as a plugin, add the kit as a local marketplace and install it from there:
+Chef is a Claude Code plugin. In the product's repository:
 
 ```text
-/plugin marketplace add ./kit
-/plugin install product-lifecycle@product-lifecycle
+/plugin marketplace add <owner>/Chef
+/plugin install chef@chef
 ```
 
-The plugin route has not been tested yet; the script works on its own either way.
+Chef also expects the ECC and Ponytail plugins and the Graphify CLI. `/chef:vision` will check
+for them.
 
-## Staying reusable
+## Rules for working on Chef
 
-The kit must never mention a specific product. `ledger.py check` enforces it: it fails if any
-file in the kit contains the product's name or one of the `separation_terms` listed in that
-product's `product.json`. To extract the kit into its own repository with its history:
-
-```bash
-git subtree split --prefix=kit -b product-lifecycle-kit
-```
-
-## Not built yet
-
-- Design-phase and Build-phase skills (until then: the `design:*` skills, ECC `plan-canvas`
-  for browser review, and a development factory or ECC `orch-*` for Build).
-- A licence, to be chosen before extraction.
+- Chef never mentions a specific product. `chef.py check`, run from a product, fails if any file
+  here contains that product's name or its listed terms.
+- Keep `scripts/chef.py` dependency-free and covered by tests.
+- No licence has been chosen yet; decide before publishing.

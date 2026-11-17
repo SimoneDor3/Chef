@@ -1,6 +1,6 @@
 # Chef: design
 
-Status: **draft for the owner's approval.** Nothing below is built yet unless marked.
+Status: **approved by the owner on 2026-11-17.** Being built; see the roadmap at the end.
 
 ## What Chef is
 
@@ -136,9 +136,9 @@ DONE    summary, cost, shortcuts taken  ▶ owner approves  ▶ commit
 Chef gets its own repository and its own Claude project and environment, so changes to Chef never
 touch a product. Products install Chef as a plugin. The first product built with it is the test bed.
 
-1. Owner approves this design.
-2. Owner creates an empty `chef` repository on GitHub.
-3. Move the kit there with its git history, rename it, and keep its tests passing.
+1. Owner approves this design. *(done)*
+2. Owner creates an empty `chef` repository on GitHub. *(done)*
+3. Move the kit there with its git history, rename it, and keep its tests passing. *(done)*
 4. Build the commands, the stages and the new dashboard in the Chef repository.
 5. Install Chef into the first product and convert its existing notes to the new format.
 6. Run `/chef:discover mvp` on it.

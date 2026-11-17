@@ -1,14 +1,18 @@
 {
-  "name": "product-lifecycle",
-  "owner": { "name": "product-lifecycle maintainers" },
-  "metadata": { "description": "Local marketplace for the product-lifecycle plugin" },
+  "name": "chef",
+  "owner": {
+    "name": "Chef maintainers"
+  },
+  "metadata": {
+    "description": "Marketplace for the Chef plugin"
+  },
   "plugins": [
     {
-      "name": "product-lifecycle",
+      "name": "chef",
       "source": "./",
-      "description": "Gated product lifecycle: frame, discover, design, build and maintain, with a decision ledger and dashboard.",
       "version": "0.1.0",
-      "category": "workflow"
+      "category": "workflow",
+      "description": "Guided product building: vision, MVP, design and build, with an offline dashboard."
     }
   ]
 }

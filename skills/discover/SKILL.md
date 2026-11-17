@@ -1,6 +1,6 @@
 ---
 name: discover
-description: Run one structured discussion round of the Discover phase - pick a topic, work through its open questions with the owner one at a time, and record decisions, new questions and features in the product ledger. Use when the owner wants to settle open points, asks "what's still open", or brings a new idea or change request.
+description: Run one structured discussion round of the Discover phase - pick a topic, work through its open questions with the owner one at a time, and record decisions, new questions and features in the product folder. Use when the owner wants to settle open points, asks "what's still open", or brings a new idea or change request.
 ---
 
 # Discover: one discussion round
@@ -9,7 +9,7 @@ Load the `lifecycle` skill first for the rules and commands.
 
 ## Before the round
 
-1. Run `ledger.py status`. Propose a topic: the owner's choice if they gave one, otherwise the one
+1. Run `chef.py status`. Propose a topic: the owner's choice if they gave one, otherwise the one
    with the most blocking questions, or the one later topics depend on.
 2. Read the topic's questions, the decisions they mention, `vision.md`, and any data-source or
    feature files involved. Note which questions depend on others and take those first.

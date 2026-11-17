@@ -1,13 +1,14 @@
 {
-  "name": "product-lifecycle",
+  "name": "chef",
   "version": "0.1.0",
-  "description": "Carry a product from idea to maintenance in gated phases: frame the vision, settle every open question in structured discussion rounds, design, then build. Ledger files in the repo, a generated dashboard, and gates only the owner can sign.",
+  "description": "Chef guides one person from a product idea to a shipped and maintained product: vision, MVP discovery, design, then a build loop with separate planner, tester, builder and reviewers. Everything lives in small files in the product's repository, with an offline dashboard.",
   "keywords": [
     "product",
+    "mvp",
     "discovery",
-    "planning",
-    "decisions",
-    "lifecycle"
+    "design",
+    "build",
+    "planning"
   ],
   "skills": [
     "./skills/"

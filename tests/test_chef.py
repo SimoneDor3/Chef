@@ -1,4 +1,4 @@
-"""Tests for scripts/ledger.py. Run: python -m unittest discover -s kit/tests"""
+"""Tests for scripts/chef.py. Run: python -m unittest discover -s tests"""
 import contextlib
 import io
 import json
@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import ledger  # noqa: E402
+import chef  # noqa: E402
 
 
 def run(*argv):
@@ -17,13 +17,13 @@ def run(*argv):
     code = 0
     with contextlib.redirect_stdout(out):
         try:
-            ledger.main(list(argv))
+            chef.main(list(argv))
         except SystemExit as exc:
             code = exc.code if isinstance(exc.code, int) else 1
     return code, out.getvalue().strip()
 
 
-class LedgerTest(unittest.TestCase):
+class ChefTest(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
         self.dir = str(self.tmp / "product")
@@ -53,11 +53,11 @@ class LedgerTest(unittest.TestCase):
         qid = self.q("--blocking")
         did = run("--dir", self.dir, "add-decision", "--title", "Use the API", "--decision", "Read from the API.",
                   "--answers", qid)[1]
-        p = ledger.Product(self.dir)
+        p = chef.Product(self.dir)
         self.assertEqual(p.items("Q")[0]["Status"], "discussing")
         self.assertEqual(p.items("D")[0]["Status"], "proposed")
         run("--dir", self.dir, "accept", did)
-        p = ledger.Product(self.dir)
+        p = chef.Product(self.dir)
         self.assertEqual(p.items("Q")[0]["Status"], "decided")
         self.assertEqual(p.items("Q")[0]["Answered by"], did)
         self.assertEqual(run("--dir", self.dir, "check")[0], 0)
@@ -65,7 +65,7 @@ class LedgerTest(unittest.TestCase):
     def test_check_catches_decided_without_decision(self):
         self.q()
         path = next((self.tmp / "product" / "questions").glob("Q-001*.md"))
-        path.write_text(ledger.set_field(path.read_text(), "Status", "decided"))
+        path.write_text(chef.set_field(path.read_text(), "Status", "decided"))
         code, out = run("--dir", self.dir, "check")
         self.assertNotEqual(code, 0)
         self.assertIn("no accepted decision", out)
@@ -94,12 +94,12 @@ class LedgerTest(unittest.TestCase):
         self.assertIn("&lt;script&gt;", page)
 
     def test_separation_flags_product_name_in_kit(self):
-        p = ledger.Product(self.dir)
+        p = chef.Product(self.dir)
         p.meta["name"] = "Zebrafinch"
-        probe = ledger.KIT / "_probe_zebrafinch.md"
+        probe = chef.KIT / "_probe_zebrafinch.md"
         probe.write_text("mentions zebrafinch")
         try:
-            self.assertTrue(any("zebrafinch" in e for e in ledger.separation_problems(p)))
+            self.assertTrue(any("zebrafinch" in e for e in chef.separation_problems(p)))
         finally:
             probe.unlink()
 

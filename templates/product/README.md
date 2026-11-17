@@ -1,4 +1,4 @@
-# {{PRODUCT}}: product ledger
+# {{PRODUCT}}: product folder
 
 Everything decided about {{PRODUCT}} before and during development lives in this folder. It is
 managed with the product kit (`kit/`); the kit's `lifecycle` skill explains the process.

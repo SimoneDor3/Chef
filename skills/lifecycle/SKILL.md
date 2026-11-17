@@ -1,6 +1,6 @@
 ---
 name: lifecycle
-description: Reference for the product lifecycle kit - phases, gates, ledger files, rules and commands. Load it before running any other skill of this kit, or when someone asks how a product is planned, what phase it is in, where a decision is recorded, or how a change request enters the process.
+description: Reference for the product lifecycle kit - phases, gates, product files, rules and commands. Load it before running any other skill of this kit, or when someone asks how a product is planned, what phase it is in, where a decision is recorded, or how a change request enters the process.
 ---
 
 # Product lifecycle
@@ -18,7 +18,7 @@ Nothing in a later phase starts early. In particular **no product code is writte
 Design gate is signed**. Throwaway spikes to answer a question are allowed; they live in
 `spikes/`, are named after the question they answer, and never ship.
 
-## The ledger
+## The product folder
 
 All state lives in plain files in the product folder (default `product/`):
 
@@ -57,16 +57,16 @@ build. Small fixes that change no decided behaviour skip straight to Build.
 
 ## Commands
 
-The script is `scripts/ledger.py` in this kit (two folders up from this file). It needs only Python 3.9+.
+The script is `scripts/chef.py` in this kit (two folders up from this file). It needs only Python 3.9+.
 
 ```
-python <kit>/scripts/ledger.py status
-python <kit>/scripts/ledger.py add-question --topic data --title "..." --context "..." [--blocking]
-python <kit>/scripts/ledger.py add-decision --title "..." --decision "..." --why "..." --answers "Q-004" [--accepted]
-python <kit>/scripts/ledger.py accept D-007
-python <kit>/scripts/ledger.py gate discover
-python <kit>/scripts/ledger.py check
-python <kit>/scripts/ledger.py dashboard
+python <kit>/scripts/chef.py status
+python <kit>/scripts/chef.py add-question --topic data --title "..." --context "..." [--blocking]
+python <kit>/scripts/chef.py add-decision --title "..." --decision "..." --why "..." --answers "Q-004" [--accepted]
+python <kit>/scripts/chef.py accept D-007
+python <kit>/scripts/chef.py gate discover
+python <kit>/scripts/chef.py check
+python <kit>/scripts/chef.py dashboard
 ```
 
 Add `--dir path` before the command if the product folder is not `./product`.
