@@ -265,6 +265,14 @@ class ChefTest(unittest.TestCase):
         self.assertNotIn("http", page)                      # offline: nothing loaded from anywhere
         self.assertNotIn(">---<", page)                     # table separators are not topics
 
+    def test_dashboard_has_a_theme_switch(self):
+        self.cmd("dashboard")
+        page = (self.root / "dashboard.html").read_text()
+        self.assertIn('id="theme"', page)
+        self.assertIn('prefers-color-scheme: dark', page)
+        self.assertIn(':root[data-theme="dark"]', page)
+        self.assertIn("localStorage", page)
+
     # -------------------------------------------------------------- deps and settings
     def test_deps_reports_missing(self):
         home = self.tmp / "home"
