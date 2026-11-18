@@ -42,7 +42,7 @@ LABELS = ["MVP", "later"]
 Q_STATUSES = ["open", "discussing", "decided", "dropped"]
 D_STATUSES = ["proposed", "accepted", "superseded", "rejected"]
 TOPIC_STATUSES = ["open", "in progress", "covered"]
-PLUGINS = {"ecc": "the ECC plugin", "ponytail": "the Ponytail plugin (/plugin marketplace add DietrichGebert/ponytail)"}
+PLUGINS = {"ecc": "the ECC plugin", "ponytail": "the Ponytail plugin: run `chef.py settings`, which declares it pinned, then /plugin install ponytail@ponytail"}
 # Ponytail is pinned to a reviewed release, so its updates never reach a product unreviewed.
 # To move to a newer release: read its changes, then update both values (full 40-character SHA).
 PONYTAIL_RELEASE = "v5.3.3"
@@ -617,11 +617,15 @@ def merge_settings(project, product_dir):
         changed.append(f"GateGuard skips {glob}")
     markets = data.setdefault("extraKnownMarketplaces", {})
     current = markets.get("ponytail", {}).get("source") if isinstance(markets.get("ponytail"), dict) else None
-    unpinned = isinstance(current, dict) and current.get("repo") == PONYTAIL_SOURCE["repo"] and "ref" not in current
-    if "ponytail" not in markets or unpinned:               # an owner's own pin or source is never touched
+    unpinned = (isinstance(current, dict) and current.get("source") == "github"
+                and current.get("repo") == PONYTAIL_SOURCE["repo"] and "ref" not in current)
+    where = f"github.com/{PONYTAIL_SOURCE['repo']} at {PONYTAIL_RELEASE}"
+    if unpinned:                                            # only the source changes; other keys stay
+        markets["ponytail"]["source"] = dict(PONYTAIL_SOURCE)
+        changed.append(f"Ponytail marketplace pinned: {where}")
+    elif "ponytail" not in markets:                         # an owner's own pin or source is never touched
         markets["ponytail"] = {"source": dict(PONYTAIL_SOURCE)}
-        changed.append(f"Ponytail marketplace {'pinned' if unpinned else 'declared'}: "
-                       f"github.com/{PONYTAIL_SOURCE['repo']} at {PONYTAIL_RELEASE}")
+        changed.append(f"Ponytail marketplace declared: {where}")
     plugins = data.setdefault("enabledPlugins", {})
     if "ponytail@ponytail" not in plugins:
         plugins["ponytail@ponytail"] = True

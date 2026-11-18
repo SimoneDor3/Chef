@@ -353,20 +353,30 @@ class ChefTest(unittest.TestCase):
         self.assertEqual(json.loads((self.tmp / ".claude" / "settings.json").read_text()), {})
 
     def test_settings_pins_ponytail_and_keeps_an_owner_pin(self):
-        self.cmd("settings", "--project", str(self.tmp))
         settings = self.tmp / ".claude" / "settings.json"
-        source = json.loads(settings.read_text())["extraKnownMarketplaces"]["ponytail"]["source"]
-        self.assertEqual(source, chef.PONYTAIL_SOURCE)
-        self.assertRegex(source["ref"], r"^[0-9a-f]{40}$")
-        # an earlier unpinned entry is upgraded; an owner's own pin is left alone
-        data = json.loads(settings.read_text())
-        data["extraKnownMarketplaces"]["ponytail"]["source"] = {"source": "github", "repo": "DietrichGebert/ponytail"}
-        settings.write_text(json.dumps(data))
-        self.assertIn("pinned", self.cmd("settings", "--project", str(self.tmp))[1])
-        data["extraKnownMarketplaces"]["ponytail"]["source"] = {"source": "github", "repo": "DietrichGebert/ponytail", "ref": "v9"}
-        settings.write_text(json.dumps(data))
-        self.cmd("settings", "--project", str(self.tmp))
-        self.assertEqual(json.loads(settings.read_text())["extraKnownMarketplaces"]["ponytail"]["source"]["ref"], "v9")
+
+        def ponytail():
+            return json.loads(settings.read_text())["extraKnownMarketplaces"]["ponytail"]
+
+        def with_entry(entry):
+            data = json.loads(settings.read_text())
+            data["extraKnownMarketplaces"]["ponytail"] = entry
+            settings.write_text(json.dumps(data))
+            return self.cmd("settings", "--project", str(self.tmp))[1]
+
+        self.assertIn("declared", self.cmd("settings", "--project", str(self.tmp))[1])
+        self.assertEqual(ponytail(), {"source": chef.PONYTAIL_SOURCE})
+        self.assertRegex(chef.PONYTAIL_SOURCE["ref"], r"^[0-9a-f]{40}$")
+        # an earlier unpinned Chef entry is pinned, and its other keys stay
+        out = with_entry({"source": {"source": "github", "repo": "DietrichGebert/ponytail"}, "autoUpdate": False})
+        self.assertIn("pinned", out)
+        self.assertEqual(ponytail(), {"source": chef.PONYTAIL_SOURCE, "autoUpdate": False})
+        # an owner's own pin, another source type, or an odd shape is left alone
+        for entry in ({"source": {"source": "github", "repo": "DietrichGebert/ponytail", "ref": "v9"}},
+                      {"source": {"source": "git", "repo": "DietrichGebert/ponytail"}},
+                      {"source": "./local"}, "odd"):
+            with_entry(entry)
+            self.assertEqual(ponytail(), entry)
 
     def test_settings_refuses_a_comma_in_the_product_path(self):
         odd = self.tmp / "a,b"
