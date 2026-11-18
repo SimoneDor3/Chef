@@ -28,7 +28,8 @@ Chef is a Claude Code plugin. In the product's repository:
 /plugin install chef@chef
 ```
 
-Chef also expects the ECC and Ponytail plugins and the Graphify CLI. `/chef:vision` will check
+Chef also expects the ECC and Ponytail plugins and the Graphify CLI. Ponytail is pinned to a reviewed
+release (see `PONYTAIL_RELEASE` in `scripts/chef.py`), which needs Claude Code v2.1.324 or later. `/chef:vision` will check
 for them.
 
 ## Rules for working on Chef
