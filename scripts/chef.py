@@ -42,7 +42,11 @@ LABELS = ["MVP", "later"]
 Q_STATUSES = ["open", "discussing", "decided", "dropped"]
 D_STATUSES = ["proposed", "accepted", "superseded", "rejected"]
 TOPIC_STATUSES = ["open", "in progress", "covered"]
-PLUGINS = {"ecc": "the ECC plugin", "ponytail": "the Ponytail plugin (/plugin marketplace add DietrichGebert/ponytail)"}
+PLUGINS = {"ecc": "the ECC plugin", "ponytail": "the Ponytail plugin: run `chef.py settings`, which declares it pinned, then /plugin install ponytail@ponytail"}
+# Ponytail is pinned to a reviewed release, so its updates never reach a product unreviewed.
+# To move to a newer release: read its changes, then update both values (full 40-character SHA).
+PONYTAIL_RELEASE = "v5.3.3"
+PONYTAIL_SOURCE = {"source": "github", "repo": "DietrichGebert/ponytail", "ref": "7801d061243d7b753bad0e0b3c057cd250b11755"}
 
 
 # ------------------------------------------------------------------ files and parsing
@@ -597,6 +601,8 @@ def merge_settings(project, product_dir):
         rel = Path(os.path.relpath(Path(product_dir).resolve(), project.resolve())).as_posix()
     except ValueError:                                      # another drive on Windows
         rel = ".."
+    if "," in rel:                                          # GATEGUARD_EXEMPT_GLOBS is comma-separated
+        raise SystemExit(f"the product folder path cannot contain a comma (got {rel})")
     if rel == "." or rel.startswith(".."):                  # never exempt the whole repo, or outside it
         raise SystemExit(f"the product folder must be inside the project, below its root (got {rel})")
     changed = []
@@ -610,9 +616,16 @@ def merge_settings(project, product_dir):
         env["GATEGUARD_EXEMPT_GLOBS"] = ",".join(globs + [glob])
         changed.append(f"GateGuard skips {glob}")
     markets = data.setdefault("extraKnownMarketplaces", {})
-    if "ponytail" not in markets:
-        markets["ponytail"] = {"source": {"source": "github", "repo": "DietrichGebert/ponytail"}}
-        changed.append("Ponytail marketplace declared (github.com/DietrichGebert/ponytail)")
+    current = markets.get("ponytail", {}).get("source") if isinstance(markets.get("ponytail"), dict) else None
+    unpinned = (isinstance(current, dict) and current.get("source") == "github"
+                and current.get("repo") == PONYTAIL_SOURCE["repo"] and "ref" not in current)
+    where = f"github.com/{PONYTAIL_SOURCE['repo']} at {PONYTAIL_RELEASE}"
+    if unpinned:                                            # only the source changes; other keys stay
+        markets["ponytail"]["source"] = dict(PONYTAIL_SOURCE)
+        changed.append(f"Ponytail marketplace pinned: {where}")
+    elif "ponytail" not in markets:                         # an owner's own pin or source is never touched
+        markets["ponytail"] = {"source": dict(PONYTAIL_SOURCE)}
+        changed.append(f"Ponytail marketplace declared: {where}")
     plugins = data.setdefault("enabledPlugins", {})
     if "ponytail@ponytail" not in plugins:
         plugins["ponytail@ponytail"] = True

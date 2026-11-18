@@ -139,10 +139,11 @@ DONE    summary, cost, shortcuts taken  ▶ owner approves  ▶ commit
 
 ## Dependencies and settings
 
-- **Required plugins:** ECC, Ponytail. **Required tools:** Graphify (Python 3.11+, `uv`), Python 3.9+
+- **Required plugins:** ECC, Ponytail (pinned to a reviewed release by commit, so its updates never
+  reach a product unreviewed; needs Claude Code v2.1.324 or later). **Required tools:** Graphify (Python 3.11+, `uv`), Python 3.9+
   for Chef's own script. `/chef:vision` checks them and says what is missing.
 - **Project settings** written by `/chef:vision` into the product's `.claude/settings.json`
-  (merged, never overwritten): Ponytail off by default (`PONYTAIL_DEFAULT_MODE=off`); ECC GateGuard
+  (merged, never overwritten): the pinned Ponytail marketplace; Ponytail off by default (`PONYTAIL_DEFAULT_MODE=off`); ECC GateGuard
   skips the product folder (`GATEGUARD_EXEMPT_GLOBS=product/**`; it stays on for code).
 
 ## Repository and roadmap
