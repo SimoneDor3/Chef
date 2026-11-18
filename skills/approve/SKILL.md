@@ -17,4 +17,5 @@ Load the `chef` skill first. Item: $ARGUMENTS (default: the item `chef.py next` 
    - **designed:** the design system and every screen, with links to the mockups;
    - **shipped:** the build summary: what was built, tests and reviews, cost, shortcuts taken.
 4. Ask one plain yes or no. Only on yes: `chef.py stage <item> <next>`.
-5. `check`, `dashboard`, session note, commit (the message names the item and stage), next move.
+5. `check`, `dashboard`, session note, commit (the message names the item and stage), and if a phase
+   branch is open, `chef.py merge`. Next move.

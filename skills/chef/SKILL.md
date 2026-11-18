@@ -30,6 +30,18 @@ Each item (`mvp`, or a feature labelled later such as `F-004`) moves one stage a
 file per screen with `Item` set), `build/<item>/`, `sessions/`, `dashboard.html` (generated, not
 committed). Templates are in Chef's `templates/` folder.
 
+## Branches
+
+Each phase works on its own branch, `<phase>-<scope>`: `vision`, `discover-mvp`,
+`discover-<topic>`, `discover-f-004`, `design-system`, `design-mvp`, `build-f-004`, `bug-<title>`.
+
+- At the start of a phase: `chef.py branch <phase> [scope]`. It creates the branch from the main
+  branch, or resumes it. It refuses while another phase branch is open: say which, and offer to
+  merge it (on the owner's yes) or continue it.
+- At the end, ask the owner to approve the result. Only on yes: `chef.py merge`. On no, the branch
+  stays open and the phase goes on.
+- `/chef:idea` and `/chef:status` need no branch.
+
 ## Rules
 
 1. Propose freely (`add-decision` without `--accepted`). Accepting a decision, covering a topic,
@@ -38,8 +50,8 @@ committed). Templates are in Chef's `templates/` folder.
 3. Accepted decisions are never edited; a new decision supersedes them.
 4. Facts about the outside world carry their source; unverified ones become questions.
 5. Chef never mentions a product; `check` fails if it does.
-6. **After every step:** `check`, `dashboard`, a few lines in `sessions/`, commit, then name the
-   next move (`chef.py next`).
+6. **After every step:** `check`, `dashboard`, a few lines in `sessions/`, commit on the phase
+   branch, then name the next move (`chef.py next`).
 
 ## Commands
 
@@ -60,6 +72,8 @@ chef.py stage mvp scoped          # move it, or refuse with what is missing
 chef.py next | status | check
 chef.py dashboard [--open]
 chef.py deps | settings           # used by /chef:vision
+chef.py branch discover sync      # start or resume discover-sync
+chef.py merge                     # merge the open phase branch, on the owner's yes
 ```
 
 ## How to talk to the owner

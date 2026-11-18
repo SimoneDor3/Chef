@@ -10,7 +10,7 @@ Load the `chef` skill first. Item: $ARGUMENTS.
 
 ## Start
 
-1. If the item is `designed`, run `chef.py stage <item> building`. If refused, say what is
+1. Branch: `chef.py branch build <item>`. If the item is `designed`, run `chef.py stage <item> building`. If refused, say what is
    missing and stop. If it is already `building`, resume from `build/<item>/`.
 2. Switch Ponytail on: `/ponytail full`. From then on it reaches every Build agent.
 3. Map the code with Graphify (code only) and refresh it after each commit. Agents query it
@@ -47,4 +47,4 @@ DONE    summary ▶ owner approves ▶ commit
 1. Write `build/<item>/summary.md` from `templates/build-summary.md`: what was built, tests and
    reviews, cost, shortcuts taken.
 2. Switch Ponytail off: `/ponytail off`.
-3. Next move: `/chef:approve <item>` to mark it shipped.
+3. Next move: `/chef:approve <item>` to mark it shipped; that merges the branch.

@@ -13,7 +13,7 @@ Step 4 of the roadmap is built: the commands, the item stages and the offline da
 | Path | What it is |
 |---|---|
 | `skills/` | the eight commands (`/chef:vision`, `/chef:discover`, `/chef:approve`, `/chef:design`, `/chef:build`, `/chef:idea`, `/chef:bug`, `/chef:status`) and `chef`, the shared rules they load |
-| `scripts/chef.py` | the product folder tool: records questions, decisions and features, moves items between stages with checks, suggests the next move, checks dependencies, writes project settings, builds the dashboard (Python 3.9+, no dependencies) |
+| `scripts/chef.py` | the product folder tool: records questions, decisions and features, moves items between stages with checks, suggests the next move, starts and merges a branch per phase, checks dependencies, writes project settings, builds the dashboard (Python 3.9+, no dependencies) |
 | `templates/` | the product folder skeleton and one template per file type |
 | `tests/` | `python -m unittest discover -s tests` |
 

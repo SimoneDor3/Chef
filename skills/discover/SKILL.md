@@ -10,6 +10,7 @@ Load the `chef` skill first. Target: $ARGUMENTS (default: what `chef.py next` su
 
 ## Start
 
+- Branch: `chef.py branch discover <target>` (`discover-mvp`, `discover-sync`, `discover-f-004`).
 - **An item** (`mvp` or `F-001`) at `idea`: run `chef.py stage <item> discovering`. If refused,
   say what is missing and stop.
 - **A feature labelled MVP**: no stage of its own; settle its scope and acceptance criteria as
@@ -51,6 +52,8 @@ Check every name against the installed ECC plugin. Example:
 
 ## End
 
-Keep a round to six to eight questions. Mark a topic covered (`chef.py topic <id> covered`) only with the
-owner's yes and nothing open in it. Then: `check`, `dashboard`, session note, commit, next move (usually the
-next MVP topic, or `/chef:approve mvp` when `chef.py stage mvp` shows every check PASS).
+Keep a round to six to eight questions. Mark a topic covered (`chef.py topic <id> covered`) only
+with the owner's yes and nothing open in it. Then: `check`, `dashboard`, session note, commit.
+Recap the round and ask the owner to approve it; on yes, `chef.py merge` (or leave it to
+`/chef:approve` when the round ends with the move to `scoped`). Next move: usually the next MVP
+topic, or `/chef:approve mvp` when `chef.py stage mvp` shows every check PASS.

@@ -1,6 +1,7 @@
 # Chef: design
 
-Status: **approved by the owner on 2026-11-17.** Being built; see the roadmap at the end.
+Status: **approved by the owner on 2026-11-17**; branches per phase requested on 2026-11-18. Being
+built; see the roadmap at the end.
 
 ## What Chef is
 
@@ -49,6 +50,28 @@ travel with the MVP and have no stage of their own.
 
 Anything labelled **later** is parked with its notes, never lost, and does not block the MVP.
 An idea the owner turns down is dropped: it leaves the stages but its file and id stay.
+
+## Branches
+
+Each phase works on its own branch, named `<phase>-<scope>`, and is merged into the main branch
+only when the owner approves its result.
+
+| Phase | Branch | Merged when the owner approves |
+|---|---|---|
+| vision | `vision` | the vision |
+| discover | `discover-mvp`, `discover-<topic>`, `discover-f-004` | the round, or the move to `scoped` |
+| design | `design-system`, `design-mvp`, `design-f-004` | the design system, or the move to `designed` |
+| build | `build-mvp`, `build-f-004` | the move to `shipped` |
+| bug | `bug-<short title>` | the fix |
+
+- `chef.py branch <phase> [scope]` creates the branch from the main branch, or switches back to
+  it to resume. `chef.py merge` merges it (`--no-ff`) and deletes it.
+- **One open phase branch at a time.** `branch` refuses while another one is unmerged, so ids are
+  never handed out twice on two branches. A "no" from the owner keeps the branch open.
+- `/chef:approve` runs on the open phase branch and merges it after the move. `/chef:idea` and
+  `/chef:status` need no branch.
+- The main branch is `origin/HEAD`, else `main`, else `master`. Pushing and pull requests are left
+  to the owner's own setup.
 
 ## Commands
 

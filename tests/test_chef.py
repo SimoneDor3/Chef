@@ -418,5 +418,61 @@ class SkillsTest(unittest.TestCase):
             self.assertIn("description: ", head)
 
 
+class BranchTest(unittest.TestCase):
+    def setUp(self):
+        self.repo = Path(tempfile.mkdtemp())
+        self.git("init", "-q", "-b", "main")
+        self.git("config", "user.email", "t@example.com")
+        self.git("config", "user.name", "T")
+        self.commit("start.md")
+
+    def tearDown(self):
+        shutil.rmtree(self.repo)
+
+    def git(self, *argv):
+        return chef.git(self.repo, *argv)
+
+    def commit(self, name):
+        (self.repo / name).write_text(name)
+        self.git("add", name)
+        self.git("commit", "-q", "-m", name)
+
+    def chef(self, *argv):
+        return run(*argv, "--project", str(self.repo))
+
+    def test_names(self):
+        self.assertEqual(chef.branch_name("vision"), "vision")
+        self.assertEqual(chef.branch_name("discover", "sync"), "discover-sync")
+        self.assertEqual(chef.branch_name("build", "F-004"), "build-f-004")
+        self.assertEqual(chef.branch_name("bug", "Save button does nothing"), "bug-save-button-does-nothing")
+        self.assertNotEqual(self.chef("branch", "discover")[0], 0)
+        self.assertNotEqual(self.chef("branch", "vision", "x")[0], 0)
+
+    def test_start_resume_and_merge(self):
+        self.assertEqual(self.chef("branch", "discover", "sync"), (0, "started discover-sync from main"))
+        self.commit("decision.md")
+        self.assertEqual(self.chef("branch", "discover", "sync"), (0, "on discover-sync"))
+        self.assertEqual(self.chef("merge"), (0, "merged discover-sync into main"))
+        self.assertEqual(self.git("branch", "--show-current"), "main")
+        self.assertTrue((self.repo / "decision.md").exists())
+        self.assertEqual(self.git("branch", "--list", "discover-sync"), "")
+
+    def test_one_open_phase_branch_at_a_time(self):
+        self.chef("branch", "discover", "mvp")
+        self.commit("mvp.md")
+        self.git("switch", "-q", "main")
+        code, out = self.chef("branch", "discover", "sync")
+        self.assertNotEqual(code, 0)
+        self.assertIn("discover-mvp is still open", out)
+        self.assertEqual(self.chef("branch", "discover", "mvp"), (0, "resumed discover-mvp"))
+
+    def test_refuses_uncommitted_changes_and_non_phase_branch(self):
+        self.assertIn("not a phase branch", self.chef("merge")[1])
+        self.chef("branch", "vision")
+        (self.repo / "vision.md").write_text("draft")
+        self.assertIn("uncommitted", self.chef("merge")[1])
+        self.assertEqual(self.git("branch", "--show-current"), "vision")
+
+
 if __name__ == "__main__":
     unittest.main()

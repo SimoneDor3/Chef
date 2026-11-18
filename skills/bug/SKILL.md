@@ -8,7 +8,7 @@ argument-hint: "<text>"
 
 Load the `chef` skill first. The bug: $ARGUMENTS
 
-1. Find what it touches: the feature, its acceptance criteria, the accepted decisions.
+1. Branch: `chef.py branch bug "<short title>"`. Find what it touches: the feature, its acceptance criteria, the accepted decisions.
 2. **Decided behaviour?** If the fix would change what an acceptance criterion or an accepted
    decision says, it is not a bug: hand it to `/chef:idea` and stop.
 3. Otherwise, with Ponytail on (`/ponytail full`):
@@ -16,5 +16,6 @@ Load the `chef` skill first. The bug: $ARGUMENTS
    - fix it with the smallest change; the build-fix agent from `toolset.json` if the build breaks;
    - run all tests; ECC `security-reviewer` and the language reviewer check the diff;
    - `/ponytail off`.
-4. Show the owner the test and the fix. Commit on their yes, with a message naming the bug.
+4. Show the owner the test and the fix. On their yes: commit, with a message naming the bug, then
+   `chef.py merge`.
 5. Session note, `dashboard`, next move.

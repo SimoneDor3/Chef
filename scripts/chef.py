@@ -19,6 +19,8 @@ Commands
   dashboard [--out F] [--open]  write the offline HTML dashboard, and open it
   deps [--project DIR]          check the plugins and tools Chef needs
   settings [--project DIR]      merge Chef's settings into the project's .claude/settings.json
+  branch PHASE [SCOPE]          start or resume the phase's branch, e.g. `discover sync`
+  merge                         merge the open phase branch into the main branch (on the owner's yes)
 
 ITEM is `mvp` or a feature id (F-001). Standard library only, so it runs anywhere Python 3.9+
 does. The product folder defaults to ./product; pass --dir to point elsewhere.
@@ -30,6 +32,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import webbrowser
 from pathlib import Path
@@ -39,6 +42,7 @@ STAGES = ["idea", "discovering", "scoped", "designing", "designed", "building", 
 # moves that start work (made by discover/design/build); every other move needs /chef:approve
 STARTED_BY = {"discovering": "/chef:discover", "designing": "/chef:design", "building": "/chef:build"}
 LABELS = ["MVP", "later"]
+PHASES = ["vision", "discover", "design", "build", "bug"]  # each works on its own branch
 Q_STATUSES = ["open", "discussing", "decided", "dropped"]
 D_STATUSES = ["proposed", "accepted", "superseded", "rejected"]
 TOPIC_STATUSES = ["open", "in progress", "covered"]
@@ -549,6 +553,13 @@ def cmd_status(args):
         print(f"waiting on you: {w}")
     command, why = next_move(p)
     print(f"next: {command}  ({why})")
+    repo = Path(args.dir)
+    if repo.exists() and git(repo, "rev-parse", "--verify", "--quiet", "HEAD", check=False) is not None:
+        try:
+            for b in open_phase_branches(repo, main_branch(repo)):
+                print(f"open branch: {b} (merged on the owner's yes)")
+        except SystemExit:
+            pass
 
 
 # ------------------------------------------------------------------ dependencies and settings
@@ -798,6 +809,95 @@ def render_dashboard(p):
 </main><script>{THEME_JS}</script></body></html>"""
 
 
+# ------------------------------------------------------------------ phase branches
+def git(repo, *argv, check=True):
+    try:
+        r = subprocess.run(["git", "-C", str(repo), *argv], capture_output=True, text=True)
+    except OSError:
+        raise SystemExit("git is not installed")
+    if check and r.returncode:
+        raise SystemExit(f"git {' '.join(argv)} failed: {(r.stderr or r.stdout).strip()}")
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def branch_name(phase, scope=None):
+    """`vision`, or `<phase>-<scope>` such as `discover-sync` or `build-f-004`."""
+    if phase not in PHASES:
+        raise SystemExit(f"unknown phase {phase}; one of {', '.join(PHASES)}")
+    if phase == "vision":
+        if scope:
+            raise SystemExit("the vision branch has no scope: it is just `vision`")
+        return "vision"
+    if not scope:
+        raise SystemExit(f"{phase} needs a scope, e.g. `chef.py branch {phase} mvp`")
+    return f"{phase}-{slug(scope)}"
+
+
+def is_phase_branch(name):
+    return name == "vision" or any(name.startswith(p + "-") for p in PHASES if p != "vision")
+
+
+def main_branch(repo):
+    head = git(repo, "symbolic-ref", "--short", "refs/remotes/origin/HEAD", check=False)
+    if head:
+        return head.split("/", 1)[1]
+    for name in ("main", "master"):
+        if git(repo, "rev-parse", "--verify", "--quiet", f"refs/heads/{name}", check=False) is not None:
+            return name
+    raise SystemExit("no main branch found (origin/HEAD, main or master): commit once on it first")
+
+
+def open_phase_branches(repo, base):
+    out = git(repo, "branch", "--format=%(refname:short)", "--no-merged", base)
+    return [b for b in out.splitlines() if is_phase_branch(b)]
+
+
+def require_clean(repo):
+    if git(repo, "status", "--porcelain"):
+        raise SystemExit("uncommitted changes: commit them first")
+
+
+def cmd_branch(args):
+    repo = Path(args.project)
+    name = branch_name(args.phase, args.scope)
+    current = git(repo, "branch", "--show-current")
+    if current == name:
+        print(f"on {name}")
+        return
+    require_clean(repo)
+    base = main_branch(repo)
+    others = [b for b in open_phase_branches(repo, base) if b != name]
+    if others:
+        raise SystemExit(f"{others[0]} is still open: merge it on the owner's yes (chef.py merge) "
+                         f"or delete it before starting {name}")
+    exists = git(repo, "rev-parse", "--verify", "--quiet", f"refs/heads/{name}", check=False) is not None
+    if exists and name not in open_phase_branches(repo, base):
+        git(repo, "branch", "-d", name)  # already merged: start afresh from the main branch
+        exists = False
+    if exists:
+        git(repo, "switch", name)
+        print(f"resumed {name}")
+    else:
+        git(repo, "switch", "-c", name, base)
+        print(f"started {name} from {base}")
+
+
+def cmd_merge(args):
+    repo = Path(args.project)
+    current = git(repo, "branch", "--show-current")
+    if not is_phase_branch(current or ""):
+        raise SystemExit(f"{current or 'this'} is not a phase branch: nothing to merge")
+    require_clean(repo)
+    base = main_branch(repo)
+    git(repo, "switch", base)
+    if git(repo, "merge", "--no-ff", current, "-m", f"Merge {current}: approved by the owner", check=False) is None:
+        git(repo, "merge", "--abort", check=False)
+        git(repo, "switch", current)
+        raise SystemExit(f"{current} does not merge cleanly into {base}; nothing was changed")
+    git(repo, "branch", "-d", current)
+    print(f"merged {current} into {base}")
+
+
 # ------------------------------------------------------------------ entry point
 def kit_version():
     try:
@@ -854,10 +954,17 @@ def main(argv=None):
     for name in ("deps", "settings"):
         s = sub.add_parser(name)
         s.add_argument("--project", default=".", help="the product's repository (default: .)")
+    s = sub.add_parser("branch")
+    s.add_argument("phase", choices=PHASES)
+    s.add_argument("scope", nargs="?")
+    s.add_argument("--project", default=".", help="the product's repository (default: .)")
+    s = sub.add_parser("merge")
+    s.add_argument("--project", default=".", help="the product's repository (default: .)")
     args = ap.parse_args(argv)
     {"init": cmd_init, "add-topic": cmd_add_topic, "add-question": cmd_add_question, "add-decision": cmd_add_decision,
      "accept": cmd_accept, "add-feature": cmd_add_feature, "topic": cmd_topic, "drop": cmd_drop, "stage": cmd_stage, "next": cmd_next, "status": cmd_status,
-     "check": cmd_check, "dashboard": cmd_dashboard, "deps": cmd_deps, "settings": cmd_settings}[args.cmd](args)
+     "check": cmd_check, "dashboard": cmd_dashboard, "deps": cmd_deps, "settings": cmd_settings,
+     "branch": cmd_branch, "merge": cmd_merge}[args.cmd](args)
 
 
 if __name__ == "__main__":

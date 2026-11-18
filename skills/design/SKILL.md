@@ -6,7 +6,7 @@ argument-hint: "<system | mvp | feature>"
 
 # /chef:design
 
-Load the `chef` skill first. Target: $ARGUMENTS.
+Load the `chef` skill first. Target: $ARGUMENTS. Branch: `chef.py branch design <target>`.
 
 ## `system`
 
@@ -14,7 +14,7 @@ Before any screen. Write `design/system.md` from Chef's `templates/design-system
 type, components, motion, from the vision's Experience section and the stack. Use
 `design:design-system` and ECC `frontend-design-direction`. Build a small mockup page showing it
 and review it with the owner in the browser (ECC `plan-canvas`). Set `Status` to `approved` only
-on their yes.
+on their yes, then commit and `chef.py merge`.
 
 ## `mvp` or a feature
 
